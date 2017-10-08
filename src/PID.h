@@ -1,6 +1,8 @@
 #ifndef PID_H
 #define PID_H
 
+#include <list>
+
 class PID {
 public:
   /*
@@ -41,6 +43,24 @@ public:
   * Calculate the total PID error.
   */
   double TotalError();
+
+  /*
+  * Difference between the current CTE and previous CTE
+  */
+  double diff_cte;
+
+  /*
+  * Integrated CTE value
+  */
+  double int_cte;
+
+private:
+
+  double squared_error;
+  int iteration;
+  std::list<double> ctes;
+  std::list<double>::size_type list_size;
 };
 
 #endif /* PID_H */
+
