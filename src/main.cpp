@@ -1,5 +1,6 @@
 #include <uWS/uWS.h>
 #include <iostream>
+#include <fstream>
 #include "json.hpp"
 #include "PID.h"
 #include <math.h>
@@ -28,7 +29,7 @@ std::string hasData(std::string s) {
   return "";
 }
 
-int main()
+int main(int argc, char *argv[])
 {
   uWS::Hub h;
 
@@ -43,9 +44,19 @@ int main()
   // D controller ... anticipating future behavior of error.
   //   If this value is small,
   //   the car will run in meandering too.
-  pid.Init(0.05, 0.001, 5);
+  std::ofstream f;
+  f.open("result.csv", std::ios::out | std::ios::app);
+  f << "cte,steering_angle,error" << std::endl;
+  if (argc == 4) {
+    float Kp = atof(argv[1]);
+    float Ki = atof(argv[2]);
+    float Kd = atof(argv[3]);
+    pid.Init(Kp, Ki, Kd);
+  } else {
+    pid.Init(0.1, 0.002, 5);
+  }
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  h.onMessage([&pid,&f](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -76,7 +87,9 @@ int main()
           }
 
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Total Error: " << pid.TotalError() << std::endl;
+          double error = pid.TotalError();
+          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Total Error: " << error << std::endl;
+          f << cte << "," << steer_value << "," << error << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
